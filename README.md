@@ -2,6 +2,7 @@
 Unofficial Python implementation of the RACER classification algorithm.
 
 ## Installation
+[![PyPI version](https://badge.fury.io/py/pyracer.svg)](https://badge.fury.io/py/pyracer)
 ```bash
 $ pip install pyracer
 ```
