@@ -8,10 +8,13 @@ $ pip install pyracer
 ```
 
 ## Usage
-RACER is designed to be consistent with Scikit-learn estimator API which makes it very easy to use
+RACER is designed to be consistent with Scikit-learn estimator API which makes it very easy to use.
+
+
 The following example demonstrates the use of RACER on the Zoo dataset.
 ### Data Obtention and Cleaning
 ```python
+from RACER import RACER, RACERPreprocessor
 from sklearn.model_selection import KFold, train_test_split
 import pandas as pd
 
