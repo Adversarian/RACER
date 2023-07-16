@@ -1,5 +1,5 @@
 # RACER
-Unofficial Python implementation of the RACER classification algorithm.
+Unofficial Python implementation of the RACER classification algorithm described by [Basiri et. al, 2019](https://link.springer.com/article/10.1007/s00521-017-3117-2).
 
 ## Installation
 [![PyPI version](https://badge.fury.io/py/pyracer.svg)](https://badge.fury.io/py/pyracer)
