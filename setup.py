@@ -25,6 +25,6 @@ setup(
         "Operating System :: OS Independent",
         "Development Status :: 4 - Beta",
         "Intended Audience :: Developers",
-        "Topic :: Scientific/Engineering :: Machine Learning",
+        "Topic :: Scientific/Engineering :: Artificial Intelligence",
     ],
 )
