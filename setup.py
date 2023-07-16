@@ -8,7 +8,7 @@ setup(
     version=__version__,
     license="MIT",
     description="Unofficial Python implementation of the RACER classification algorithm.",
-    author="Adversarian",
+    author="Arian Tashakkor, Mohammad Safaiyan",
     author_email="a77physics@gmail.com",
     url="https://github.com/Adversarian/RACER",
     long_description_content_type="text/markdown",
