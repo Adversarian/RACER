@@ -1,5 +1,8 @@
 # RACER
 Unofficial Python implementation of the RACER classification algorithm described by [Basiri et. al, 2019](https://link.springer.com/article/10.1007/s00521-017-3117-2).
+RACER is designed specifically for discrete datasets and therefore uses the entropy-based MDLP discretization algorithm by [Fayyad and Irani, 1993](http://web.donga.ac.kr/kjunwoo/files/Multi%20interval%20discretization%20of%20continuous%20valued%20attributes%20for%20classification%20learning.pdf). 
+
+*(The maximum number of allowed splits in each partition is exposed through the `max_num_splits` keyword argument of the `RACERPreprocessor` which defaults to 32)*
 
 ## Installation
 [![PyPI version](https://badge.fury.io/py/pyracer.svg)](https://badge.fury.io/py/pyracer)
@@ -80,6 +83,8 @@ Final Rules (8 total): (if --> then (label) | fitness)
 	[101001101010101010011010100000101010] --> [0000001] (6) | 0.9507142857142856
 ```
 
+## Issues
+Found a problem within the implementation or an inconsistency with the original algorithm? Please feel free to [submit a PR](https://github.com/Adversarian/RACER/pulls) or [create a new issue](https://github.com/Adversarian/RACER/issues).
 
 ## Official Paper
 ```bibtex
