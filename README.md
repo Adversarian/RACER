@@ -51,6 +51,7 @@ Y = df[['type']].astype('category')
 ```
 
 ### RACER Preprocessing Step
+RACER requires a preprocessing step to be performed on the data **prior to** splitting into test and train portions. This step discretizes continous features and then converts each feature into a [dummy encoded](https://datascience.stackexchange.com/questions/98172/what-is-the-difference-between-one-hot-and-dummy-encoding) variable.
 ```python
 X, Y = RACERPreprocessor().fit_transform(X, Y)
 
@@ -58,6 +59,7 @@ X_train, X_test, Y_train, Y_test = train_test_split(X,Y, random_state=1, test_si
 ```
 
 ### Fitting RACER on the Dataset
+RACER provides a `benchmark` keyword argument that can be used to time the `fit` method. Moreover, the hyperparameter `alpha` can be set using its respect keyword argument. (Note that `beta` is uniquely determined as `1.0 - alpha` and it is not exposed as a keyword argument)
 ```python
 racer = RACER(alpha=0.95, benchmark=True)
 racer.fit(X_train, Y_train)
@@ -67,6 +69,7 @@ Now you may access the public methods available within the `racer` object such a
 ```python
 >>> racer.score(X_test, Y_test)
 0.8709677419354839
+
 >>> racer.display_rules()
 Algorithm Parameters:
 	- Alpha: 0.95
