@@ -4,6 +4,10 @@ RACER is designed specifically for discrete datasets and therefore uses the entr
 
 *(The maximum number of allowed splits in each partition is exposed through the `max_num_splits` keyword argument of the `RACERPreprocessor` which defaults to 32)*
 
+Please consider citing this work if you use it in an academic setting.
+
+[![DOI](https://zenodo.org/badge/656323287.svg)](https://zenodo.org/badge/latestdoi/656323287)
+
 ## Installation
 [![PyPI version](https://badge.fury.io/py/pyracer.svg)](https://badge.fury.io/py/pyracer)
 ```bash
