@@ -15,7 +15,7 @@ The following example demonstrates the use of RACER on the Zoo dataset.
 ### Data Obtention and Cleaning
 ```python
 from RACER import RACER, RACERPreprocessor
-from sklearn.model_selection import KFold, train_test_split
+from sklearn.model_selection import train_test_split
 import pandas as pd
 
 # dataset from https://archive.ics.uci.edu/ml/machine-learning-databases/zoo/
