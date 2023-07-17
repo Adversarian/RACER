@@ -63,7 +63,7 @@ X_train, X_test, Y_train, Y_test = train_test_split(X,Y, random_state=1, test_si
 ```
 
 ### Fitting RACER on the Dataset
-RACER provides a `benchmark` keyword argument that can be used to time the `fit` method. Moreover, the hyperparameter `alpha` can be set using its respect keyword argument. (Note that `beta` is uniquely determined as `1.0 - alpha` and it is not exposed as a keyword argument)
+RACER provides a `benchmark` keyword argument that can be used to time the `fit` method. Moreover, the hyperparameter `alpha` can be set using its respective keyword argument. (Note that `beta` is uniquely determined as `1.0 - alpha` and is therefore not exposed through a keyword argument)
 ```python
 racer = RACER(alpha=0.95, benchmark=True)
 racer.fit(X_train, Y_train)
