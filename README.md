@@ -89,9 +89,11 @@ Final Rules (8 total): (if --> then (label) | fitness)
 	[101001101001110101011110001000101010] --> [0000100] (4) | 0.9521428571428571
 	[101001101010101010011010100000101010] --> [0000001] (6) | 0.9507142857142856
 ```
+## TODO
+- Add another example notebook featuring Scikit-learn's built-in datasets.
 
-## Issues
-Found a problem within the implementation or an inconsistency with the original algorithm? Please feel free to [submit a PR](https://github.com/Adversarian/RACER/pulls) or [create a new issue](https://github.com/Adversarian/RACER/issues).
+## Issues and Feature Requests
+Found a problem within the implementation or an inconsistency with the original algorithm? Or maybe you would like to request a feature? Please feel free to [submit a PR](https://github.com/Adversarian/RACER/pulls) or [create a new issue](https://github.com/Adversarian/RACER/issues).
 
 ## Official Paper
 ```bibtex
