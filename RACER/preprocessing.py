@@ -13,7 +13,7 @@ class RACERPreprocessor:
         algorithm for "binary" tasks.
 
         Args:
-            target (str, optional): Whether the task if "multiclass" or "binary" classification. Defaults to "multiclass".
+            target (str, optional): Whether the task is "multiclass" or "binary" classification. Defaults to "multiclass".
             max_n_bins (int, optional): Maximum number of bins to quantize in. Defaults to 32.
             max_num_splits (int, optional): Maximum number of splits to consider at each partition for MDLP. Defaults to 32.
         """
