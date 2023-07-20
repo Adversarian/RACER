@@ -3,18 +3,25 @@ from typing import Tuple, Union
 import numpy as np
 import pandas as pd
 
-from optbinning import MDLP
+from optbinning import MulticlassOptimalBinning as MOB, MDLP
 
 
 class RACERPreprocessor:
-    def __init__(self, max_num_splits=32):
+    def __init__(self, target: str="multiclass", max_n_bins=32, max_num_splits=32):
         """RACER preprocessing step that quantizes numerical columns and dummy encodes the categorical ones.
-        Quantization is based on the entropy-based  Minimum Description Length Principle algorithm (MDLP).
+        Quantization is based on the optimal binning algorithm for "multiclass" tasks and the entropy-based MDLP
+        algorithm for "binary" tasks.
 
         Args:
+            target (str, optional): Whether the task if "multiclass" or "binary" classification. Defaults to "multiclass".
+            max_n_bins (int, optional): Maximum number of bins to quantize in. Defaults to 32.
             max_num_splits (int, optional): Maximum number of splits to consider at each partition for MDLP. Defaults to 32.
         """
-        self._max_num_splits = max_num_splits
+        assert target in ["multiclass", "binary"], "`target` must either be 'multiclass' or 'binary'"
+        if target == "multiclass":
+            self._quantizer = MOB(max_n_bins=max_n_bins)
+        elif target == "binary":
+            self._quantizer = MDLP(max_candidates=max_num_splits)
 
     def fit_transform(
         self, X: Union[pd.DataFrame, np.ndarray], y: Union[pd.DataFrame, np.ndarray]
@@ -34,9 +41,9 @@ class RACERPreprocessor:
         numerics_X = X.select_dtypes(include=[np.number]).columns.tolist()
         if numerics_X:
             for col in numerics_X:
-                optb = MDLP(max_candidates=self._max_num_splits)
-                optb.fit(X[col].values, np.squeeze(y.values))
-                X[col] = pd.cut(X[col], bins=optb.splits, duplicates="drop")
+                self._quantizer.fit(X[col].values, np.squeeze(y.values))
+                bins = [X[col].min()] + self._quantizer.splits.tolist() + [X[col].max()]
+                X[col] = pd.cut(X[col], bins=bins, include_lowest=True, labels=False)
         X, y = X.astype("category"), y.astype("category")
         X = pd.get_dummies(X).to_numpy()
         y = pd.get_dummies(y).to_numpy()
