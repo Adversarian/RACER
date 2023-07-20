@@ -87,7 +87,7 @@ Final Rules (8 total): (if --> then (label) | fitness)
 	[101001101001110101011110001000101010] --> [0000100] (4) | 0.9521428571428571
 	[101001101010101010011010100000101010] --> [0000001] (6) | 0.9507142857142856
 ```
-## TODO
+## To Do
 - ~Add another example notebook featuring Scikit-learn's built-in datasets.~
 
 ## Issues and Feature Requests
