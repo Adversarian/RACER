@@ -378,7 +378,8 @@ class RACER:
         temp_rules_if = self._final_rules_if
         temp_rules_then = self._final_rules_then
         temp_rules_fitnesses = self._fitnesses
-        for i in range(len(temp_rules_if) - 2):
+        i = 0
+        while i < len(temp_rules_if) - 1:
             mask = np.ones(len(temp_rules_if), dtype=bool)
             covered = self._covered(temp_rules_if[i + 1 :], temp_rules_if[i])
             mask[i + 1 :][covered] = False
@@ -387,6 +388,7 @@ class RACER:
                 temp_rules_then[mask],
                 temp_rules_fitnesses[mask],
             )
+            i += 1
 
         self._final_rules_if, self._final_rules_then, self._fitnesses = (
             temp_rules_if,
