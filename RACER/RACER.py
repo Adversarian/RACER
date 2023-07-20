@@ -138,6 +138,17 @@ class RACER:
 
         return labels
 
+    def _bool2str(self, bool_arr: np.ndarray) -> str:
+        """Converts a boolean array to a human-readable string
+
+        Args:
+            bool_arr (np.ndarray): The input boolean array
+
+        Returns:
+            str: Human-readable string output
+        """
+        return np.array2string(bool_arr.astype(int), separator="")
+
     def display_rules(self) -> None:
         """Print out the final rules"""
         assert self._has_fit, "RACER has not been fit yet."
@@ -150,8 +161,8 @@ class RACER:
         )
         for i in range(len(self._final_rules_if)):
             print(
-                f"\t{np.array2string(self._final_rules_if[i].astype(int), separator='')} -->"
-                f" {np.array2string(self._final_rules_then[i].astype(int), separator='')}"
+                f"\t{self._bool2str(self._final_rules_if[i])} -->"
+                f" {self._bool2str(self._final_rules_then[i])}"
                 f" ({self._label_to_int(self._final_rules_then[i])})"
                 f" | {self._fitnesses[i]}"
             )
@@ -370,9 +381,11 @@ class RACER:
         for i in range(len(temp_rules_if) - 2):
             mask = np.ones(len(temp_rules_if), dtype=bool)
             covered = self._covered(temp_rules_if[i + 1 :], temp_rules_if[i])
-            mask[i+1:][covered] = False
+            mask[i + 1 :][covered] = False
             temp_rules_if, temp_rules_then, temp_rules_fitnesses = (
-                temp_rules_if[mask], temp_rules_then[mask], temp_rules_fitnesses[mask]
+                temp_rules_if[mask],
+                temp_rules_then[mask],
+                temp_rules_fitnesses[mask],
             )
 
         self._final_rules_if, self._final_rules_then, self._fitnesses = (
