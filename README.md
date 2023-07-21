@@ -53,9 +53,9 @@ Y = df[['type']].astype('category')
 ```
 
 ### RACER Preprocessing Step
-RACER requires a preprocessing step to be performed on the data **prior to** splitting into test and train portions. This step discretizes continous features and then converts each feature into a [dummy encoded](https://datascience.stackexchange.com/questions/98172/what-is-the-difference-between-one-hot-and-dummy-encoding) variable.
+RACER requires a preprocessing step to be performed on the data **prior to** splitting into test and train portions. This step discretizes continous features and then converts each feature into a [dummy encoded](https://datascience.stackexchange.com/questions/98172/what-is-the-difference-between-one-hot-and-dummy-encoding) variable. Note that since different discretization methods are used for multiclass and binary classification tasks you need to either specify the task using the `target` keyword argument or leave it to default to `"auto"` which attempts to infer your task when you call `fit_transform(X,y)` from the number of unique values in `y`.
 ```python
-X, Y = RACERPreprocessor().fit_transform(X, Y)
+X, Y = RACERPreprocessor(target="multiclass").fit_transform(X, Y)
 
 X_train, X_test, Y_train, Y_test = train_test_split(X,Y, random_state=1, test_size=0.3)
 ```
