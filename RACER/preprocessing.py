@@ -7,21 +7,25 @@ from optbinning import MulticlassOptimalBinning as MOB, MDLP
 
 
 class RACERPreprocessor:
-    def __init__(self, target: str="multiclass", max_n_bins=32, max_num_splits=32):
+    def __init__(self, target: str="auto", max_n_bins=32, max_num_splits=32):
         """RACER preprocessing step that quantizes numerical columns and dummy encodes the categorical ones.
         Quantization is based on the optimal binning algorithm for "multiclass" tasks and the entropy-based MDLP
         algorithm for "binary" tasks.
 
         Args:
-            target (str, optional): Whether the task is "multiclass" or "binary" classification. Defaults to "multiclass".
+            target (str, optional): Whether the task is "multiclass" or "binary" classification. Defaults to "auto" which attempts automatically infer the task from `y`.
             max_n_bins (int, optional): Maximum number of bins to quantize in. Defaults to 32.
             max_num_splits (int, optional): Maximum number of splits to consider at each partition for MDLP. Defaults to 32.
         """
-        assert target in ["multiclass", "binary"], "`target` must either be 'multiclass' or 'binary'"
+        assert target in ["multiclass", "binary", "auto"], "`target` must either be 'multiclass', 'binary' or 'auto'."
         if target == "multiclass":
             self._quantizer = MOB(max_n_bins=max_n_bins)
         elif target == "binary":
             self._quantizer = MDLP(max_candidates=max_num_splits)
+        else:
+            self._quantizer = "infer"
+            self._max_n_bins = max_n_bins
+            self._max_candidates = max_num_splits
 
     def fit_transform(
         self, X: Union[pd.DataFrame, np.ndarray], y: Union[pd.DataFrame, np.ndarray]
@@ -38,6 +42,12 @@ class RACERPreprocessor:
             Tuple[Union[pd.DataFrame, np.ndarray], Union[pd.DataFrame, np.ndarray]]: Transformed features and targets vectors.
         """
         X, y = pd.DataFrame(X), pd.DataFrame(y)
+        if self._quantizer == "infer":
+            uniques = y.nunique()
+            if uniques > 2:
+                self._quantizer = MOB(max_candidates=self._max_num_splits)
+            else:
+                self._quantizer = MDLP(max_n_bins=self._max_n_bins)
         numerics_X = X.select_dtypes(include=[np.number]).columns.tolist()
         if numerics_X:
             for col in numerics_X:
