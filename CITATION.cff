@@ -1,0 +1,13 @@
+# YAML 1.2
+---
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+authors:
+- family-names: "Tashakkor"
+  given-names: "Arian"
+  orcid: "https://orcid.org/0009-0000-6806-3217"
+title: "PyRACER - Unofficial Python implementation of the RACER classification algorithm."
+url: "https://github.com/Adversarian/RACER"
+doi: 10.5281/zenodo.8174037
+date-released: 2023
+version: 1.1.3
