@@ -1,10 +1,11 @@
 # RACER
+
 Unofficial Python implementation of the RACER classification algorithm described by [Basiri et. al, 2019](https://link.springer.com/article/10.1007/s00521-017-3117-2).
-RACER is designed specifically for discrete datasets and therefore uses the entropy-based MDLP discretization algorithm by [Fayyad and Irani, 1993](http://web.donga.ac.kr/kjunwoo/files/Multi%20interval%20discretization%20of%20continuous%20valued%20attributes%20for%20classification%20learning.pdf) for binary tasks and an [optimal binning strategy](https://arxiv.org/abs/2001.08025) for the multiclass case. The code is also heavily documented for ease of usage.
+RACER is designed specifically for discrete datasets and therefore uses the entropy-based MDLP discretization algorithm by [Fayyad and Irani, 1993](http://web.donga.ac.kr/kjunwoo/files/Multi%20interval%20discretization%20of%20continuous%20valued%20attributes%20for%20classification%20learning.pdf) for binary tasks and an [optimal binning strategy](https://arxiv.org/abs/2001.08025) for the multiclass case. The code is also heavily documented for ease of use.
 
 Please consider citing this work if you use it in an academic setting.
 
-[![DOI](https://zenodo.org/badge/656323287.svg)](https://zenodo.org/badge/latestdoi/656323287)
+[![Documentation Status](https://readthedocs.org/projects/pyracer/badge/?version=latest)](https://pyracer.readthedocs.io/en/latest/?badge=latest) [![DOI](https://zenodo.org/badge/656323287.svg)](https://zenodo.org/badge/latestdoi/656323287)
 
 ## Installation
 [![PyPI version](https://badge.fury.io/py/pyracer.svg)](https://badge.fury.io/py/pyracer)
@@ -90,6 +91,7 @@ Final Rules (8 total): (if --> then (label) | fitness)
 ## To Do
 - ~Add another example notebook featuring Scikit-learn's built-in datasets.~
 - Unify discretization algorithms for all tasks.
+- Better docs!
 
 ## Issues and Feature Requests
 Found a problem within the implementation or an inconsistency with the original algorithm? Or maybe you would like to request a feature? Please feel free to [submit a PR](https://github.com/Adversarian/RACER/pulls) or [create a new issue](https://github.com/Adversarian/RACER/issues).
