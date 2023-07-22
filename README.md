@@ -90,6 +90,7 @@ Final Rules (8 total): (if --> then (label) | fitness)
 ## To Do
 - ~Add another example notebook featuring Scikit-learn's built-in datasets.~
 - Unify discretization algorithms for all tasks.
+- Better docs!
 
 ## Issues and Feature Requests
 Found a problem within the implementation or an inconsistency with the original algorithm? Or maybe you would like to request a feature? Please feel free to [submit a PR](https://github.com/Adversarian/RACER/pulls) or [create a new issue](https://github.com/Adversarian/RACER/issues).
