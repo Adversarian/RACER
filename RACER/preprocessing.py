@@ -43,7 +43,7 @@ class RACERPreprocessor:
         """
         X, y = pd.DataFrame(X), pd.DataFrame(y)
         if self._quantizer == "infer":
-            uniques = y.nunique()
+            uniques = y.nunique().values
             if uniques > 2:
                 self._quantizer = MOB(max_candidates=self._max_num_splits)
             else:
