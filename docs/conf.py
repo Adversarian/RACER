@@ -10,8 +10,8 @@ project = 'RACER'
 copyright = '2023, Arian Tashakkor, Mohammad Safaiyan'
 author = 'Arian Tashakkor, Mohammad Safaiyan'
 
-version = 'v.1.1.2'
-release = 'v.1.1.2'
+version = 'v1.1.2'
+release = 'v1.1.2'
 
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
@@ -20,7 +20,7 @@ extensions = [
     'sphinx.ext.autodoc',
     'sphinx.ext.viewcode',
     'sphinx.ext.todo',
-    'sphinx.ext.autodoc',
+    'sphinx.ext.autosummary',
     'sphinx_rtd_theme',
 ]
 
