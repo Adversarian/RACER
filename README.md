@@ -90,6 +90,7 @@ Final Rules (8 total): (if --> then (label) | fitness)
 ```
 ## To Do
 - ~Add another example notebook featuring Scikit-learn's built-in datasets.~
+- Replace `pandas.get_dummies()` with Scikit-learn's `OneHotEncoder` for better consistency.
 - Unify discretization algorithms for all tasks.
 - Better docs!
 
