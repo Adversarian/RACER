@@ -55,6 +55,8 @@ Y = df[['type']].astype('category')
 
 ### RACER Preprocessing Step
 RACER requires a preprocessing step to be performed on the data **prior to** splitting into test and train portions. This step discretizes continous features and then converts each feature into a [dummy encoded](https://datascience.stackexchange.com/questions/98172/what-is-the-difference-between-one-hot-and-dummy-encoding) variable. Note that since different discretization methods are used for multiclass and binary classification tasks you need to either specify the task using the `target` keyword argument or leave it to default to `"auto"` which attempts to infer your task when you call `fit_transform(X,y)` from the number of unique values in `y`.
+
+RACERPreprocessor now also supports separate `fit` and `transform` functions but it is still recommended to use `fit_transform` or perform `fit` on the entire dataset prior to splitting. This ensures that new unseen values are not left out of the transformation at test time.
 ```python
 X, Y = RACERPreprocessor(target="multiclass").fit_transform(X, Y)
 
@@ -90,7 +92,7 @@ Final Rules (8 total): (if --> then (label) | fitness)
 ```
 ## To Do
 - ~Add another example notebook featuring Scikit-learn's built-in datasets.~
-- Replace `pandas.get_dummies()` with Scikit-learn's `OneHotEncoder` for better consistency.
+- ~Replace `pandas.get_dummies()` with Scikit-learn's `OneHotEncoder` for better consistency.~
 - Unify discretization algorithms for all tasks.
 - Better docs!
 
