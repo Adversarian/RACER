@@ -9,9 +9,20 @@ Please consider citing this work if you use it in an academic setting.
 
 ## Installation
 [![PyPI version](https://badge.fury.io/py/pyracer.svg)](https://badge.fury.io/py/pyracer)
+
+A new release will be made available on PyPI every time new features are added or bugs are fixed so you can simply use `pip` to install the package:
 ```bash
 $ pip install pyracer
 ```
+
+If you would like to develop the package for your own use case however, you may clone this repository and then simply install the requirements. Reading the documentation prior to this is strongly advised, however, as you may find native support for your specific task in the private methods already available.
+```bash
+$ git clone https://github.com/Adversarian/RACER/
+$ cd RACER
+$ pip install -r requirements-dev.txt
+```
+
+Otherwise, you may also try to [monkey-patch](https://stackoverflow.com/questions/68637641/monkey-patch-add-new-class-and-functions-to-existing-module) the class in your own code if you find that solution more appealing.
 
 ## Usage
 PyRACER is designed to be consistent with Scikit-learn estimator API which makes it very easy to use.
