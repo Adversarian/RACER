@@ -3,12 +3,12 @@ from typing import Tuple, Union
 import numpy as np
 import pandas as pd
 
-from optbinning import MDLP, MulticlassOptimalBinning as MOB
+from optbinning import MDLP, MulticlassOptimalBinning as MOB, OptimalBinning as OB
 from sklearn.preprocessing import LabelBinarizer, OneHotEncoder
 
 
 class RACERPreprocessor:
-    def __init__(self, target: str = "auto", max_n_bins=32, max_num_splits=32):
+    def __init__(self, target: str = "auto", max_n_bins=32, max_num_splits=32, use_optimal_quantizer=False):
         """RACER preprocessing step that quantizes numerical columns and dummy encodes the categorical ones.
         Quantization is based on the optimal binning algorithm for "multiclass" tasks and the entropy-based MDLP
         algorithm for "binary" tasks.
@@ -23,14 +23,17 @@ class RACERPreprocessor:
             "binary",
             "auto",
         ], "`target` must either be 'multiclass', 'binary' or 'auto'."
-        if target == "multiclass":
-            self._quantizer = MOB(max_n_bins=max_n_bins)
-        elif target == "binary":
-            self._quantizer = MDLP(max_candidates=max_num_splits)
+        if use_optimal_quantizer:
+            self._quantizer = OB()
         else:
-            self._quantizer = "infer"
-            self._max_n_bins = max_n_bins
-            self._max_candidates = max_num_splits
+            if target == "multiclass":
+                self._quantizer = MOB(max_n_bins=max_n_bins)
+            elif target == "binary":
+                self._quantizer = MDLP(max_candidates=max_num_splits)
+            else:
+                self._quantizer = "infer"
+                self._max_n_bins = max_n_bins
+                self._max_candidates = max_num_splits
 
     def fit_transform_pandas(
         self, X: Union[pd.DataFrame, np.ndarray], y: Union[pd.DataFrame, np.ndarray]
