@@ -2,6 +2,9 @@ from setuptools import find_packages, setup
 
 exec(open("RACER/version.py").read())
 
+with open("README.md", "r") as fh:
+    long_description = fh.read()
+
 setup(
     name="pyracer",
     packages=find_packages(),
@@ -11,6 +14,7 @@ setup(
     author="Arian Tashakkor, Mohammad Safaiyan",
     author_email="a77physics@gmail.com",
     url="https://github.com/Adversarian/RACER",
+    long_description=long_description,
     long_description_content_type="text/markdown",
     keywords=["machine learning", "classification", "RACER"],
     install_requires=[
