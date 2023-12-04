@@ -90,7 +90,7 @@ Now you may access the public methods available within the `racer` object such a
 ... Algorithm Parameters:
 ... 	    - Alpha: 0.95
 ... 	    - Time to fit: 0.008133015999987947s
-
+... 
 ... Final Rules (8 total): (if --> then (label) | fitness)
 ... 	    [111011011111111101011011111000111111] --> [1000000] (0) | 0.9685714285714285
 ... 	    [100101101111111001011010010000011111] --> [0100000] (1) | 0.9607142857142856
