@@ -52,3 +52,29 @@ def test_transform_clips_numeric_values_to_fitted_boundary_bins():
 
     assert np.array_equal(outside_X, boundary_X)
     assert np.all(outside_X.sum(axis=1) == 1)
+
+
+def test_ig_paper_uses_the_best_single_information_gain_midpoint():
+    X = pd.DataFrame({"value": [0.0, 1.0, 2.0, 3.0]})
+    y = np.array([0, 0, 1, 1])
+
+    X_transformed, _ = RACERPreprocessor(
+        target="binary", discretizer="ig-paper"
+    ).fit_transform(X, y)
+
+    expected = np.array(
+        [[True, False], [True, False], [False, True], [False, True]]
+    )
+    assert np.array_equal(X_transformed, expected)
+
+
+def test_ig_paper_handles_a_constant_numeric_feature():
+    X = pd.DataFrame({"value": [2.0, 2.0, 2.0]})
+    y = np.array([0, 1, 0])
+
+    X_transformed, _ = RACERPreprocessor(
+        target="binary", discretizer="ig-paper"
+    ).fit_transform(X, y)
+
+    assert X_transformed.shape == (3, 1)
+    assert X_transformed.all()

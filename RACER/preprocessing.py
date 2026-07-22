@@ -7,8 +7,60 @@ from optbinning import MDLP, MulticlassOptimalBinning as MOB, OptimalBinning as 
 from sklearn.preprocessing import LabelBinarizer, OneHotEncoder
 
 
+class InformationGainDiscretizer:
+    """Single binary midpoint split from the RACER paper, Eqs. 1-3."""
+
+    def fit(self, values: np.ndarray, y: np.ndarray):
+        values = np.asarray(values, dtype=float).reshape(-1)
+        y = np.asarray(y).reshape(-1)
+        unique_values = np.unique(values)
+        if len(unique_values) == 1:
+            self.splits = np.array([], dtype=float)
+            return self
+
+        midpoints = (unique_values[:-1] + unique_values[1:]) / 2.0
+        weighted_entropies = np.array(
+            [self._weighted_entropy(values, y, midpoint) for midpoint in midpoints]
+        )
+        self.splits = np.array([midpoints[np.argmin(weighted_entropies)]])
+        return self
+
+    @staticmethod
+    def _entropy(labels: np.ndarray) -> float:
+        if len(labels) == 0:
+            return 0.0
+        _, counts = np.unique(labels, return_counts=True)
+        probabilities = counts / counts.sum()
+        return float(-(probabilities * np.log2(probabilities)).sum())
+
+    @classmethod
+    def _weighted_entropy(
+        cls, values: np.ndarray, labels: np.ndarray, midpoint: float
+    ) -> float:
+        left = labels[values <= midpoint]
+        right = labels[values > midpoint]
+        total = len(labels)
+        return (len(left) / total) * cls._entropy(left) + (
+            len(right) / total
+        ) * cls._entropy(right)
+
+
+def _bin_edges(values: pd.Series, splits: np.ndarray) -> list:
+    minimum, maximum = values.min(), values.max()
+    if minimum == maximum:
+        return [-np.inf, np.inf]
+    return [minimum] + splits.tolist() + [maximum]
+
+
 class RACERPreprocessor:
-    def __init__(self, target: str = "auto", max_n_bins=32, max_num_splits=32, use_optimal_quantizer=False):
+    def __init__(
+        self,
+        target: str = "auto",
+        max_n_bins=32,
+        max_num_splits=32,
+        use_optimal_quantizer=False,
+        discretizer="default",
+    ):
         """RACER preprocessing step that quantizes numerical columns and dummy encodes the categorical ones.
         Quantization is based on the optimal binning algorithm for "multiclass" tasks and the entropy-based MDLP
         algorithm for "binary" tasks.
@@ -17,13 +69,22 @@ class RACERPreprocessor:
             target (str, optional): Whether the task is "multiclass" or "binary" classification. Defaults to "auto" which attempts automatically infer the task from `y`.
             max_n_bins (int, optional): Maximum number of bins to quantize in. Defaults to 32.
             max_num_splits (int, optional): Maximum number of splits to consider at each partition for MDLP. Defaults to 32.
+            discretizer (str, optional): ``"default"`` retains MDLP/optimal binning;
+                ``"ig-paper"`` uses the original paper's single information-gain
+                midpoint split. Defaults to ``"default"``.
         """
         assert target in [
             "multiclass",
             "binary",
             "auto",
         ], "`target` must either be 'multiclass', 'binary' or 'auto'."
-        if use_optimal_quantizer:
+        assert discretizer in [
+            "default",
+            "ig-paper",
+        ], "`discretizer` must either be 'default' or 'ig-paper'."
+        if discretizer == "ig-paper":
+            self._quantizer = InformationGainDiscretizer()
+        elif use_optimal_quantizer:
             self._quantizer = OB()
         else:
             if target == "multiclass":
@@ -61,7 +122,7 @@ class RACERPreprocessor:
         if numerics_X:
             for col in numerics_X:
                 self._quantizer.fit(X[col].values, np.squeeze(y.values))
-                bins = [X[col].min()] + self._quantizer.splits.tolist() + [X[col].max()]
+                bins = _bin_edges(X[col], self._quantizer.splits)
                 X[col] = pd.cut(X[col], bins=bins, include_lowest=True, labels=False)
         X, y = X.astype("category"), y.astype("category")
         X = pd.get_dummies(X).to_numpy()
@@ -93,7 +154,7 @@ class RACERPreprocessor:
         if numerics_X:
             for col in numerics_X:
                 self._quantizer.fit(X[col].values, np.squeeze(y.values))
-                bins = [X[col].min()] + self._quantizer.splits.tolist() + [X[col].max()]
+                bins = _bin_edges(X[col], self._quantizer.splits)
                 X[col] = pd.cut(X[col], bins=bins, include_lowest=True, labels=False)
         X, y = X.astype("category"), y.astype("category")
         X = OneHotEncoder(sparse_output=False).fit_transform(X).astype(bool)
@@ -124,7 +185,7 @@ class RACERPreprocessor:
             self._bins = []
             for col in numerics_X:
                 self._quantizer.fit(X[col].values, np.squeeze(y.values))
-                bins = [X[col].min()] + self._quantizer.splits.tolist() + [X[col].max()]
+                bins = _bin_edges(X[col], self._quantizer.splits)
                 self._bins.append(bins)
                 X[col] = pd.cut(X[col], bins=bins, include_lowest=True, labels=False)
         X, y = X.astype("category"), y.astype("category")
