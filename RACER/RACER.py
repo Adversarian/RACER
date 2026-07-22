@@ -70,6 +70,9 @@ class RACER:
             self._label_to_int(cls): np.where(XNOR(self._y, cls).min(axis=-1))[0]
             for cls in self._classes
         }
+        use_packed = bool(getattr(self, "_use_packed_coverage", True))
+        self._coverage_backend = "uint64" if use_packed else "boolean-reference"
+        self._X_packed = self._pack_bits(self._X) if use_packed else None
 
         self._create_init_rules()
 
@@ -86,6 +89,8 @@ class RACER:
             self._extants_then[independent_indices],
             self._fitnesses[independent_indices],
         )
+        if self._extants_if_packed is not None:
+            self._extants_if_packed = self._extants_if_packed[independent_indices]
 
         self._generalize_extants()
 
@@ -100,6 +105,11 @@ class RACER:
             self._extants_if[args],
             self._extants_then[args],
             self._fitnesses[args],
+        )
+        self._final_rules_if_packed = (
+            self._extants_if_packed[args]
+            if self._extants_if_packed is not None
+            else None
         )
 
         self._finalize_rules()
@@ -123,8 +133,17 @@ class RACER:
         labels = np.zeros((len(X), self._final_rules_then.shape[1]), dtype=bool)
         found = np.zeros(len(X), dtype=bool)
         all_found = found.sum() == len(X)
+        X_packed = (
+            self._pack_bits(X)
+            if getattr(self, "_final_rules_if_packed", None) is not None
+            else None
+        )
         for i in range(len(self._final_rules_if)):
-            covered = self._covered(X, self._final_rules_if[i])
+            covered = (
+                self._covered_packed(X_packed, self._final_rules_if_packed[i])
+                if X_packed is not None
+                else self._covered(X, self._final_rules_if[i])
+            )
             labels[AND(covered, NOT(found))] = self._final_rules_then[i]
             found[covered] = True
             all_found = found.sum() == len(X)
@@ -232,7 +251,9 @@ class RACER:
         y_pred = self.predict(X_test)
         return accuracy_score(y_test, y_pred)
 
-    def _fitness_fn(self, rule_if: np.ndarray, rule_then: np.ndarray) -> np.ndarray:
+    def _fitness_fn(
+        self, rule_if: np.ndarray, rule_then: np.ndarray, packed_rule=None
+    ) -> np.ndarray:
         """Returns fitness for a given rule according to the RACER paper
 
         Args:
@@ -242,7 +263,9 @@ class RACER:
         Returns:
             np.ndarray: Fitness score for the rule as defined in the RACER paper
         """
-        n_covered, n_correct = self._confusion(rule_if, rule_then)
+        n_covered, n_correct = self._confusion(
+            rule_if, rule_then, packed_rule=packed_rule
+        )
         accuracy = n_correct / n_covered
         coverage = n_covered / self._cardinality
         return self._alpha * accuracy + self._beta * coverage
@@ -263,8 +286,37 @@ class RACER:
         covered = OR(NOT(X), AND(rule_if, X)).min(axis=-1)
         return covered
 
+    def _pack_bits(self, bits: np.ndarray) -> np.ndarray:
+        """Pack the final feature axis into zero-padded uint64 words."""
+        bits = np.asarray(bits, dtype=bool)
+        if bits.ndim not in (1, 2):
+            raise ValueError("packed RACER bits must be one- or two-dimensional")
+        words = (bits.shape[-1] + 63) // 64
+        packed_bytes = np.packbits(bits, axis=-1, bitorder="little")
+        byte_width = words * np.dtype(np.uint64).itemsize
+        if packed_bytes.shape[-1] < byte_width:
+            padding = [(0, 0)] * packed_bytes.ndim
+            padding[-1] = (0, byte_width - packed_bytes.shape[-1])
+            packed_bytes = np.pad(packed_bytes, padding, mode="constant")
+        contiguous = np.ascontiguousarray(packed_bytes)
+        return contiguous.view(np.uint64).reshape(*bits.shape[:-1], words)
+
+    def _covered_packed(self, X: np.ndarray, rule_if: np.ndarray) -> np.ndarray:
+        """Return coverage via ``(instance AND NOT rule) == 0`` per word."""
+        uncovered = AND(X, NOT(rule_if))
+        return np.equal(uncovered, 0).all(axis=-1)
+
+    def _training_covered(
+        self, rule_if: np.ndarray, packed_rule=None
+    ) -> np.ndarray:
+        if self._X_packed is not None:
+            if packed_rule is None:
+                packed_rule = self._pack_bits(rule_if)
+            return self._covered_packed(self._X_packed, packed_rule)
+        return self._covered(self._X, rule_if)
+
     def _confusion(
-        self, rule_if: np.ndarray, rule_then: np.ndarray
+        self, rule_if: np.ndarray, rule_then: np.ndarray, packed_rule=None
     ) -> Tuple[np.ndarray, np.ndarray]:
         """Returns n_covered and n_correct for instances classified by a rule.
 
@@ -275,7 +327,7 @@ class RACER:
         Returns:
             Tuple[np.ndarray, np.ndarray]: (n_covered, n_correct)
         """
-        covered = self._covered(self._X, rule_if)
+        covered = self._training_covered(rule_if, packed_rule=packed_rule)
         n_covered = covered.sum()
         y_covered = self._y[covered]
         n_correct = XNOR(y_covered, rule_then).min(axis=-1).sum()
@@ -293,13 +345,26 @@ class RACER:
     def _create_init_rules(self) -> None:
         """Creates an initial set of rules from theinput feature vectors"""
         self._extants_if = self._X.copy()
+        self._extants_if_packed = (
+            self._pack_bits(self._extants_if)
+            if self._X_packed is not None
+            else None
+        )
         self._extants_then = self._y.copy()
         self._extants_covered = np.zeros(len(self._X), dtype=bool)
         self._majority_then = self._get_majority()
         self._fitnesses = np.array(
             [
-                self._fitness_fn(rule_if, rule_then)
-                for rule_if, rule_then in zip(self._X, self._y)
+                self._fitness_fn(
+                    rule_if,
+                    rule_then,
+                    packed_rule=(
+                        self._extants_if_packed[index]
+                        if self._extants_if_packed is not None
+                        else None
+                    ),
+                )
+                for index, (rule_if, rule_then) in enumerate(zip(self._X, self._y))
             ]
         )
 
@@ -329,14 +394,28 @@ class RACER:
         """
         if self._composable(idx1, idx2):
             composition = self._compose(self._extants_if[idx1], self._extants_if[idx2])
+            composition_packed = (
+                OR(
+                    self._extants_if_packed[idx1],
+                    self._extants_if_packed[idx2],
+                )
+                if self._extants_if_packed is not None
+                else None
+            )
             composition_fitness = self._fitness_fn(
-                composition, self._extants_then[idx1]
+                composition,
+                self._extants_then[idx1],
+                packed_rule=composition_packed,
             )
             if composition_fitness > np.maximum(
                 self._fitnesses[idx1], self._fitnesses[idx2]
             ):
                 self._update_extants(
-                    idx1, composition, self._extants_then[idx1], composition_fitness
+                    idx1,
+                    composition,
+                    self._extants_then[idx1],
+                    composition_fitness,
+                    packed_rule=composition_packed,
                 )
 
     def _compose(self, rule1: np.ndarray, rule2: np.ndarray) -> np.ndarray:
@@ -357,6 +436,7 @@ class RACER:
         new_rule_if: np.ndarray,
         new_rule_then: np.ndarray,
         new_rule_fitness: np.ndarray,
+        packed_rule=None,
     ):
         """Remove all rules from current extants that are covered by `new_rule`.
         Then append new rule to extants.
@@ -368,7 +448,16 @@ class RACER:
             new_rule_fitness (np.ndarray): Fitness of the `new_rule`
         """
         same_class_indices = self._class_indices[self._label_to_int(new_rule_then)]
-        covered = self._covered(self._extants_if[same_class_indices], new_rule_if)
+        if self._extants_if_packed is not None:
+            if packed_rule is None:
+                packed_rule = self._pack_bits(new_rule_if)
+            covered = self._covered_packed(
+                self._extants_if_packed[same_class_indices], packed_rule
+            )
+        else:
+            covered = self._covered(
+                self._extants_if[same_class_indices], new_rule_if
+            )
         self._extants_covered[same_class_indices[covered]] = True
         self._extants_covered[index] = False
         self._extants_if[index], self._extants_then[index], self._fitnesses[index] = (
@@ -376,6 +465,8 @@ class RACER:
             new_rule_then,
             new_rule_fitness,
         )
+        if self._extants_if_packed is not None:
+            self._extants_if_packed[index] = packed_rule
 
     def _label_to_int(self, label: np.ndarray) -> int:
         """Converts dummy label to int
@@ -395,31 +486,52 @@ class RACER:
             for j in range(len(self._extants_if[i])):
                 if not self._extants_if[i][j]:
                     self._extants_if[i][j] = True
+                    if self._extants_if_packed is not None:
+                        word_index, word_bit = divmod(j, 64)
+                        bit = np.uint64(1) << np.uint64(word_bit)
+                        self._extants_if_packed[i, word_index] |= bit
                     fitness = self._fitness_fn(
-                        self._extants_if[i], self._extants_then[i]
+                        self._extants_if[i],
+                        self._extants_then[i],
+                        packed_rule=(
+                            self._extants_if_packed[i]
+                            if self._extants_if_packed is not None
+                            else None
+                        ),
                     )
                     if fitness > self._fitnesses[i]:
                         self._fitnesses[i] = fitness
                     else:
                         self._extants_if[i][j] = False
+                        if self._extants_if_packed is not None:
+                            self._extants_if_packed[i, word_index] &= ~bit
             new_extants_if[i] = self._extants_if[i]
         self._extants_if = new_extants_if
 
     def _finalize_rules(self) -> None:
         """Removes redundant rules to form the final ruleset"""
         temp_rules_if = self._final_rules_if
+        temp_rules_if_packed = self._final_rules_if_packed
         temp_rules_then = self._final_rules_then
         temp_rules_fitnesses = self._fitnesses
         i = 0
         while i < len(temp_rules_if) - 1:
             mask = np.ones(len(temp_rules_if), dtype=bool)
-            covered = self._covered(temp_rules_if[i + 1 :], temp_rules_if[i])
+            covered = (
+                self._covered_packed(
+                    temp_rules_if_packed[i + 1 :], temp_rules_if_packed[i]
+                )
+                if temp_rules_if_packed is not None
+                else self._covered(temp_rules_if[i + 1 :], temp_rules_if[i])
+            )
             mask[i + 1 :][covered] = False
             temp_rules_if, temp_rules_then, temp_rules_fitnesses = (
                 temp_rules_if[mask],
                 temp_rules_then[mask],
                 temp_rules_fitnesses[mask],
             )
+            if temp_rules_if_packed is not None:
+                temp_rules_if_packed = temp_rules_if_packed[mask]
             i += 1
 
         self._final_rules_if, self._final_rules_then, self._fitnesses = (
@@ -427,3 +539,4 @@ class RACER:
             temp_rules_then,
             temp_rules_fitnesses,
         )
+        self._final_rules_if_packed = temp_rules_if_packed
