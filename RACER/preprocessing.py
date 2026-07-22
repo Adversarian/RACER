@@ -103,18 +103,15 @@ class RACERPreprocessor:
     def fit(
         self, X: Union[pd.DataFrame, np.ndarray], y: Union[pd.DataFrame, np.ndarray]
     ):
-        """Fits the preprocessor on X and y for downstream transformations.
+        """Fits the preprocessor on training X and y for downstream transformations.
+
+        Fit only on the training partition, then use :meth:`transform` for held-out
+        data. This prevents target leakage through discretization and encoding.
 
         Args:
             X (Union[pd.DataFrame, np.ndarray]): Features vector
             y (Union[pd.DataFrame, np.ndarray]): Targets vector
         """
-        print(
-            "It is strongly recommended that you use fit_transform on your entire dataset."
-        )
-        print(
-            "Use this option ONLY if you're certain new unseen values will not be encountered at test time."
-        )
         X, y = pd.DataFrame(X), pd.DataFrame(y)
         if self._quantizer == "infer":
             uniques = y.nunique().values
@@ -131,7 +128,9 @@ class RACERPreprocessor:
                 self._bins.append(bins)
                 X[col] = pd.cut(X[col], bins=bins, include_lowest=True, labels=False)
         X, y = X.astype("category"), y.astype("category")
-        self._X_encoder = OneHotEncoder(sparse_output=False).fit(X)
+        self._X_encoder = OneHotEncoder(
+            handle_unknown="ignore", sparse_output=False
+        ).fit(X)
         self._y_encoder = LabelBinarizer().fit(y)
 
     def transform(
@@ -150,7 +149,10 @@ class RACERPreprocessor:
         numerics_X = X.select_dtypes(include=[np.number]).columns.tolist()
         if numerics_X:
             for col, bin in zip(numerics_X, self._bins):
-                X[col] = pd.cut(X[col], bins=bin, include_lowest=True, labels=False)
+                clipped = X[col].clip(lower=bin[0], upper=bin[-1])
+                X[col] = pd.cut(
+                    clipped, bins=bin, include_lowest=True, labels=False
+                )
         X, y = X.astype("category"), y.astype("category")
         X, y = self._X_encoder.transform(X).astype(bool), self._y_encoder.transform(
             y

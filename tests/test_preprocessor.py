@@ -1,4 +1,5 @@
 import numpy as np
+import pandas as pd
 from RACER import RACERPreprocessor
 from sklearn.datasets import load_iris
 
@@ -21,3 +22,33 @@ def test_output_equiv():
         assert np.all(ys_tfmd[i] == ys_tfmd[i - 1])
         assert Xs_tfmd[i].shape == Xs_tfmd[i - 1].shape
         assert ys_tfmd[i].shape == ys_tfmd[i - 1].shape
+
+
+def test_transform_ignores_unseen_feature_categories():
+    X_train = pd.DataFrame({"color": ["red", "blue", "red"]})
+    y_train = np.array([0, 1, 0])
+    preprocessor = RACERPreprocessor()
+    preprocessor.fit(X_train, y_train)
+
+    X_test = pd.DataFrame({"color": ["green", "red"]})
+    X_transformed, _ = preprocessor.transform(X_test, np.array([0, 0]))
+
+    assert not X_transformed[0].any()
+    assert X_transformed[1].sum() == 1
+
+
+def test_transform_clips_numeric_values_to_fitted_boundary_bins():
+    X_train = pd.DataFrame({"value": [0.0, 1.0, 2.0, 3.0]})
+    y_train = np.array([0, 0, 1, 1])
+    preprocessor = RACERPreprocessor(target="binary")
+    preprocessor.fit(X_train, y_train)
+
+    boundary_X, _ = preprocessor.transform(
+        pd.DataFrame({"value": [0.0, 3.0]}), np.array([0, 1])
+    )
+    outside_X, _ = preprocessor.transform(
+        pd.DataFrame({"value": [-100.0, 100.0]}), np.array([0, 1])
+    )
+
+    assert np.array_equal(outside_X, boundary_X)
+    assert np.all(outside_X.sum(axis=1) == 1)
