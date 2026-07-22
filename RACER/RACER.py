@@ -28,6 +28,7 @@ class RACER:
         alpha=0.9,
         suppress_warnings=False,
         benchmark=False,
+        fallback="majority",
     ):
         """Initialize the RACER class
 
@@ -35,10 +36,18 @@ class RACER:
             alpha (float, optional): Value of alpha according to the RACER paper. Defaults to 0.9.
             suppress_warnings (bool, optional): Whether to suppress any warnings raised during prediction. Defaults to False.
             benchmark (bool, optional): Whether to time the `fit` method for benchmark purposes. Defaults to False.
+            fallback (str, optional): How to label instances not covered by a rule.
+                ``"majority"`` preserves the original behavior; ``"partial-match"``
+                selects by overlap, fitness, then rule order. Defaults to ``"majority"``.
         """
+        assert fallback in [
+            "majority",
+            "partial-match",
+        ], "`fallback` must either be 'majority' or 'partial-match'."
         self._alpha, self._beta = alpha, 1.0 - alpha
         self._suppress_warnings = suppress_warnings
         self._benchmark = benchmark
+        self._fallback = fallback
         self._has_fit = False
 
     def fit(self, X: np.ndarray, y: np.ndarray) -> None:
@@ -113,6 +122,7 @@ class RACER:
         assert self._has_fit, "RACER has not been fit yet."
         labels = np.zeros((len(X), self._final_rules_then.shape[1]), dtype=bool)
         found = np.zeros(len(X), dtype=bool)
+        all_found = found.sum() == len(X)
         for i in range(len(self._final_rules_if)):
             covered = self._covered(X, self._final_rules_if[i])
             labels[AND(covered, NOT(found))] = self._final_rules_then[i]
@@ -126,9 +136,14 @@ class RACER:
                 print(
                     f"WARNING: RACER was unable to find a perfect match for {len(X) - found.sum()} instances out of {len(X)}"
                 )
-                print(
-                    "These instances will be labelled as the majority class during training."
-                )
+                if self._fallback == "partial-match" and len(self._final_rules_if):
+                    print(
+                        "These instances will be labelled using the best partial-matching rule."
+                    )
+                else:
+                    print(
+                        "These instances will be labelled as the majority class during training."
+                    )
             leftover_indices = np.where(NOT(found))[0]
             for idx in leftover_indices:
                 labels[idx] = self._closest_match(X[idx])
@@ -168,7 +183,7 @@ class RACER:
             )
 
     def _closest_match(self, X: np.ndarray) -> np.ndarray:
-        """Find the closest matching rule to `X` (This will be extended later)
+        """Find the configured fallback label for an uncovered instance.
 
         Args:
             X (np.ndarray): Input rule `X`
@@ -176,7 +191,24 @@ class RACER:
         Returns:
             np.ndarray: Matched rule
         """
-        return self._majority_then
+        if self._fallback == "majority" or not len(self._final_rules_if):
+            return self._majority_then
+
+        denominator = X.sum()
+        intersections = AND(self._final_rules_if, X).sum(axis=-1)
+        overlaps = (
+            intersections / denominator
+            if denominator
+            else np.zeros(len(self._final_rules_if))
+        )
+        order = np.lexsort(
+            (
+                np.arange(len(self._final_rules_if)),
+                -self._fitnesses,
+                -overlaps,
+            )
+        )
+        return self._final_rules_then[order[0]]
 
     def score(self, X_test: np.ndarray, y_test: np.ndarray) -> float:
         """Returns accuracy on the provided test data.
@@ -234,7 +266,7 @@ class RACER:
     def _confusion(
         self, rule_if: np.ndarray, rule_then: np.ndarray
     ) -> Tuple[np.ndarray, np.ndarray]:
-        """Returns n_correct and n_covered for instances classified by a rule.
+        """Returns n_covered and n_correct for instances classified by a rule.
 
         Args:
             rule_if (np.ndarray): If part of rule (x)
