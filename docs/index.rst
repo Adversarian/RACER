@@ -101,27 +101,29 @@ Data Obtention and Cleaning
 RACER Preprocessing Step
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
-RACER requires a preprocessing step to be performed on the data **prior
-to** splitting into test and train portions. This step discretizes
-continous features and then converts each feature into a `dummy
+RACER discretizes continuous features and converts each feature into a `dummy
 encoded <https://datascience.stackexchange.com/questions/98172/what-is-the-difference-between-one-hot-and-dummy-encoding>`__
-variable. Note that since different discretization methods are used for
-multiclass and binary classification tasks you need to either specify
-the task using the ``target`` keyword argument or leave it to default to
-``"auto"`` which attempts to infer your task when you call
-``fit_transform(X,y)`` from the number of unique values in ``y``.
+variable. Since discretization uses the target, split raw rows first and
+fit the preprocessor only on training data. Fitting on the full dataset
+leaks held-out information. ``fit_transform(X, y)`` remains a convenience
+for data that is already a training partition.
 
-RACERPreprocessor now also supports separate ``fit`` and ``transform``
-functions but it is still recommended to use ``fit_transform`` or
-perform ``fit`` on the entire dataset prior to splitting. This ensures
-that new unseen values are not left out of the transformation at test
-time.
+The default remains MDLP for binary targets and optimal binning for
+multiclass targets. Set ``discretizer="ig-paper"`` for the original
+paper's single information-gain midpoint split. Transforming ignores
+unseen categorical values and clips numeric values to fitted boundary
+bins.
 
 .. code:: python
 
-   X, Y = RACERPreprocessor(target="multiclass").fit_transform(X, Y)
+   X_train, X_test, Y_train, Y_test = train_test_split(
+       X, Y, random_state=1, test_size=0.3
+   )
 
-   X_train, X_test, Y_train, Y_test = train_test_split(X,Y, random_state=1, test_size=0.3)
+   preprocessor = RACERPreprocessor(target="multiclass")
+   preprocessor.fit(X_train, Y_train)
+   X_train, Y_train = preprocessor.transform(X_train, Y_train)
+   X_test, Y_test = preprocessor.transform(X_test, Y_test)
 
 Fitting RACER on the Dataset
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -220,4 +222,3 @@ Indices and tables
 * :ref:`genindex`
 * :ref:`modindex`
 * :ref:`search`
-

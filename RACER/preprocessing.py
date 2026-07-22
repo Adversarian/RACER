@@ -104,6 +104,10 @@ class RACERPreprocessor:
         using an optimal binning strategy that employs a decision tree as a preprocessing step.
         (This uses the legacy pandas dummy encoder. You can use this to retain total backward compatibility with previous code)
 
+        This is a convenience method for training data. Calling it before splitting a
+        full dataset leaks target information into held-out rows; use separate
+        :meth:`fit` and :meth:`transform` calls for evaluation workflows.
+
         Args:
             X (Union[pd.DataFrame, np.ndarray]): Features matrix
             y (Union[pd.DataFrame, np.ndarray]): Targets vector
@@ -135,6 +139,10 @@ class RACERPreprocessor:
         """Preprocesses the dataset by replacing nominal vaues with dummy variables.
         Converts to numpy boolean arrays and returns the dataset. All numerical values are discretized
         using an optimal binning strategy that employs a decision tree as a preprocessing step.
+
+        This is a convenience method for training data. Calling it before splitting a
+        full dataset leaks target information into held-out rows; use separate
+        :meth:`fit` and :meth:`transform` calls for evaluation workflows.
 
         Args:
             X (Union[pd.DataFrame, np.ndarray]): Features matrix
